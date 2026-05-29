@@ -1,61 +1,506 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <meta charset="UTF-8">
-<title>TV HUB</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SDTV LIVE</title>
+
 <style>
-body{margin:0;font-family:sans-serif;background:#111;color:white}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:10px}
-.card{background:#1c1c1c;padding:10px;border-radius:10px;cursor:pointer;text-align:center}
-.card img{width:100%;height:90px;object-fit:contain}
+
+html,body{
+margin:0;
+padding:0;
+height:100vh;
+font-family:sans-serif;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+background:#0026e6;
+}
+
+/* HEADER */
+
+header{
+background:#000;
+padding:10px 15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+color:white;
+}
+
+.logo span:first-child{
+color:white;
+font-weight:900;
+}
+
+.logo span:last-child{
+color:red;
+font-weight:900;
+}
+
+.icons{
+display:flex;
+gap:10px;
+}
+
+.icon{
+width:35px;
+height:35px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
+cursor:pointer;
+font-size:18px;
+}
+
+.search{
+background:red;
+}
+
+.share{
+background:#333;
+}
+
+/* SEARCH */
+
+#search{
+display:none;
+width:95%;
+margin:5px auto;
+padding:10px;
+border-radius:10px;
+border:2px solid red;
+outline:none;
+}
+
+/* BANNER */
+
+#banner{
+background:#0026e6;
+padding:15px;
+}
+
+.big{
+background:white;
+border-radius:12px;
+padding:10px;
+display:flex;
+gap:10px;
+align-items:center;
+cursor:pointer;
+}
+
+.big img{
+width:100px;
+height:100px;
+object-fit:contain;
+}
+
+.tag{
+color:red;
+font-weight:900;
+font-size:18px;
+}
+
+.title{
+font-size:18px;
+font-weight:bold;
+color:#000;
+margin-top:5px;
+}
+
+.sub{
+font-size:12px;
+color:#555;
+}
+
+/* FILTER */
+
+.filters{
+display:flex;
+gap:8px;
+padding:10px;
+overflow-x:auto;
+white-space:nowrap;
+background:#fff;
+}
+
+.filters::-webkit-scrollbar{
+display:none;
+}
+
+.btn{
+background:red;
+color:white;
+padding:6px 15px;
+border-radius:20px;
+cursor:pointer;
+flex-shrink:0;
+font-weight:bold;
+}
+
+.active{
+background:black;
+}
+
+/* GRID */
+
+#grid{
+flex:1;
+overflow-y:auto;
+background:#0026e6;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+padding:10px;
+}
+
+.item{
+background:#eee;
+border-radius:12px;
+padding:10px;
+text-align:center;
+cursor:pointer;
+transition:0.3s;
+}
+
+.item:hover{
+transform:scale(1.03);
+}
+
+.item img{
+width:60px;
+height:60px;
+object-fit:contain;
+}
+
+.item div{
+font-size:12px;
+font-weight:bold;
+margin-top:5px;
+}
+
+/* LOADER */
+
+.loader{
+width:40px;
+height:40px;
+border:4px solid #fff;
+border-top:4px solid red;
+border-radius:50%;
+animation:spin 1s linear infinite;
+margin:50px auto;
+}
+
+@keyframes spin{
+100%{
+transform:rotate(360deg);
+}
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+#grid{
+grid-template-columns:repeat(2,1fr);
+}
+
+.big img{
+width:80px;
+height:80px;
+}
+
+}
+
 </style>
 </head>
 
 <body>
 
-<h2 style="text-align:center">LIVE TV</h2>
-<div class="grid" id="grid"></div>
+<header>
+
+<div class="logo">
+<span>SDTV</span><span>LIVE</span>
+</div>
+
+<div class="icons">
+
+<div class="icon search" onclick="toggleSearch()">
+🔍
+</div>
+
+<div class="icon share" onclick="shareApp()">
+📩
+</div>
+
+</div>
+
+</header>
+
+<input
+id="search"
+placeholder="Search Channels..."
+oninput="searchChannels()">
+
+<div id="banner"></div>
+
+<div class="filters" id="filters"></div>
+
+<div id="grid">
+
+<div class="loader"></div>
+
+</div>
 
 <script>
 
-const API =
-"https://sayan-sportlink-jio-tv-main.pages.dev/Channel/channels.json";
+/* JSON URL */
 
-fetch(API)
-.then(r => r.json())
-.then(data => {
+const JSON_URL =
+"https://sayan-jio-tv.pages.dev/channel/channels.json";
 
-  const grid = document.getElementById("grid");
+let all=[];
 
-  data.forEach(ch => {
+/* LOAD JSON */
 
-    const div = document.createElement("div");
-    div.className = "card";
+fetch(JSON_URL)
 
-    div.innerHTML = `
-      <img src="${ch.logo}">
-      <p>${ch.name}</p>
-    `;
+.then(r=>r.json())
 
-    div.onclick = () => {
+.then(data=>{
 
-      if(ch.url){
-        window.open(ch.url, "_blank");
-      }
-      else if(ch.fileName){
-        window.open(
-          "https://sayan-sportlink-jio-tv-main.pages.dev/Channel/" + ch.fileName,
-          "_blank"
-        );
-      }
+    all = data.map(ch => ({
 
-    };
+        name  : ch.name || "Channel",
 
-    grid.appendChild(div);
+        logo  : ch.logo || "",
 
-  });
+        group : ch.category || "General",
+
+        /* FULL PLAYER URL */
+
+        url :
+        "https://sayan-jio-tv.pages.dev/channel/"
+        + ch.fileName
+
+    }));
+
+    createFilters();
+
+    render(all);
+
+})
+
+.catch(err=>{
+
+    document.getElementById("grid").innerHTML =
+
+    "<h2 style='color:white;text-align:center'>Failed To Load Channels</h2>";
 
 });
+
+/* RENDER */
+
+function render(list){
+
+let grid=document.getElementById("grid");
+
+let banner=document.getElementById("banner");
+
+grid.innerHTML="";
+
+/* FEATURED */
+
+let f=list[0];
+
+if(f){
+
+banner.innerHTML = `
+
+<div class="big" onclick="play('${f.url}')">
+
+<img src="${f.logo}">
+
+<div>
+
+<div class="tag">FEATURED NOW</div>
+
+<div class="title">${f.name}</div>
+
+<div class="sub">Click to Play</div>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+/* CHANNEL GRID */
+
+let frag=document.createDocumentFragment();
+
+list.forEach(c=>{
+
+let d=document.createElement("div");
+
+d.className="item";
+
+d.innerHTML=`
+
+<img src="${c.logo}" loading="lazy">
+
+<div>${c.name}</div>
+
+`;
+
+d.onclick=()=>play(c.url);
+
+frag.appendChild(d);
+
+});
+
+grid.appendChild(frag);
+
+}
+
+/* PLAY CHANNEL */
+
+function play(url){
+
+window.location.href = url;
+
+}
+
+/* FILTER BUTTONS */
+
+function createFilters(){
+
+let f=document.getElementById("filters");
+
+let groups=[...new Set(all.map(x=>x.group))];
+
+f.innerHTML=`
+
+<div class="btn active"
+onclick="filter('all',this)">
+All
+</div>
+
+`;
+
+groups.forEach(g=>{
+
+let d=document.createElement("div");
+
+d.className="btn";
+
+d.innerText=g;
+
+d.onclick=()=>filter(g,d);
+
+f.appendChild(d);
+
+});
+
+}
+
+/* FILTER */
+
+function filter(g,el){
+
+document
+.querySelectorAll('.btn')
+.forEach(b=>b.classList.remove('active'));
+
+el.classList.add('active');
+
+if(g==="all"){
+
+render(all);
+
+return;
+
+}
+
+render(
+
+all.filter(c=>
+
+c.group.toLowerCase()
+.includes(g.toLowerCase())
+
+)
+
+);
+
+}
+
+/* SEARCH */
+
+function searchChannels(){
+
+let t=document
+.getElementById("search")
+.value
+.toLowerCase();
+
+render(
+
+all.filter(c=>
+
+c.name.toLowerCase()
+.includes(t)
+
+)
+
+);
+
+}
+
+/* SEARCH TOGGLE */
+
+function toggleSearch(){
+
+let s=document.getElementById("search");
+
+s.style.display =
+s.style.display==="block"
+?
+"none"
+:
+"block";
+
+}
+
+/* SHARE */
+
+function shareApp(){
+
+if(navigator.share){
+
+navigator.share({
+
+title:"SDTV LIVE",
+
+url:location.href
+
+});
+
+}else{
+
+alert(location.href);
+
+}
+
+}
 
 </script>
 
